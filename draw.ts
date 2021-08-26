@@ -1,26 +1,47 @@
 window.onload = function () {
     let canvas : HTMLCanvasElement = document.getElementById("canvas") as HTMLCanvasElement;
-    canvas.width = 1024;
+    canvas.width = 1600;
     canvas.height = 720;
     let ctx : CanvasRenderingContext2D = canvas.getContext("2d");
 
-    let digit = new Digit(50, 50, 240, 360, 10, 10);
+    let digit0 = new Digit(0, 0, 120, 180, 5, 5);
+    let digit1 = new Digit(125, 0, 120, 180, 5, 5);
+    let sep = new Separator(250, 0, 55, 180, 5, 5);
+    let digit2 = new Digit(310, 0, 120, 180, 5, 5);
+    let digit3 = new Digit(435, 0, 120, 180, 5, 5);
+    let sep1 = new Separator(560, 0, 55, 180, 5, 5);
+    let digit4 = new Digit(620, 0, 120, 180, 5, 5);
+    let digit5 = new Digit(745, 0, 120, 180, 5, 5);
 
     setInterval(() => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.beginPath();
-        digit.draw(ctx);
+        digit0.draw(ctx);
+        digit1.draw(ctx);
+        sep.draw(ctx);
+        digit2.draw(ctx);
+        digit3.draw(ctx);
+        sep1.draw(ctx);
+        digit4.draw(ctx);
+        digit5.draw(ctx);
         ctx.stroke();
     }, 50);
 
-    let x = 0;
-
     setInterval(() => {
-        do {
-            x = (x + 1) % 10;
-        } while (positions[x].length == 0);
-        digit.setTarget(x);
-    }, 2500);
+        let now = new Date();
+        let h = now.getHours();
+        let m = now.getMinutes();
+        let s = now.getSeconds();
+
+        digit0.setTarget(Math.floor(h / 10));
+        digit1.setTarget(Math.floor(h % 10));
+        sep.set();
+        digit2.setTarget(Math.floor(m / 10));
+        digit3.setTarget(Math.floor(m % 10));
+        sep1.set();
+        digit4.setTarget(Math.floor(s / 10));
+        digit5.setTarget(Math.floor(s % 10));
+    }, 1000);
 
 }
 
@@ -57,6 +78,11 @@ class Clock {
     moveArrows() {
         let curTs = Date.now();
         let tsDiff = curTs - this.lastUpdTs;
+        this.lastUpdTs = curTs;
+
+        if (this.hours === this.targetHours && this.minutes === this.targetMinutes) {
+            return;
+        }
 
         let targetHours = (this.targetHours < this.hours ? this.targetHours + 2 * Math.PI : this.targetHours);
         let targetMinutes = (this.targetMinutes < this.minutes ? this.targetMinutes + 2 * Math.PI : this.targetMinutes);
@@ -66,8 +92,6 @@ class Clock {
 
         this.hours = (nextHours > 2 * Math.PI ? nextHours - 2 * Math.PI : nextHours);
         this.minutes = (nextMinutes > 2 * Math.PI ? nextMinutes - 2 * Math.PI : nextMinutes);
-
-        this.lastUpdTs = curTs;
     }
 
     draw(ctx : CanvasRenderingContext2D, x : number, y : number, r : number) {
@@ -112,7 +136,7 @@ class Segment {
         for (let i = 0; i < n; ++i) {
             let curRow = [];
             for (let j = 0; j < m; ++j) {
-                curRow.push(new Clock(Math.PI));
+                curRow.push(new Clock(2 * Math.PI));
             }
             this.clocks.push(curRow);
         }
@@ -129,6 +153,14 @@ class Segment {
                     this.x + j * (clocksW + this.gapx) + clocksW / 2,
                     this.y + i * (clocksH + this.gapy) + clocksH / 2,
                     r);
+            }
+        }
+    }
+
+    clear() {
+        for (let i = 0; i < this.n; ++i) {
+            for (let j = 0; j < this.m; ++j) {
+                this.clocks[i][j].setTarget(XX[0], XX[1]);
             }
         }
     }
@@ -149,6 +181,20 @@ class Digit extends Segment {
     }
 }
 
+class Separator extends Segment {
+    constructor(x : number, y : number, w : number, h : number, gapx : number, gapy : number) {
+        super(x, y, w, h, gapx, gapy, 6, 2);
+    }
+
+    set() {
+       for (let i = 0; i < this.n; ++i) {
+           for (let j = 0; j < this.m; ++j) {
+               this.clocks[i][j].setTarget(positions['separator'][i][j][0], positions['separator'][i][j][1]);
+           }
+       }
+    }
+}
+
 let RD = [0.5 * Math.PI, Math.PI];
 let RL = [0.5 * Math.PI, 1.5 * Math.PI];
 let DL = [Math.PI, 1.5 * Math.PI];
@@ -162,6 +208,7 @@ let UY = [0, 0.75 * Math.PI];
 let YD = [1.75 * Math.PI, Math.PI];
 
 let positions = {
+    'separator' : [[XX, XX], [RD, DL], [RU, LU], [RD, DL], [RU, LU], [XX, XX]],
     0 : [[RD, RL, RL, DL], [DU, RD, DL, DU], [DU, DU, DU, DU], [DU, DU, DU, DU], [DU, RU, LU, DU], [RU, RL, RL, LU]],
     1 : [[RD, RL, DL, XX], [RU, DL, DU, XX], [XX, DU, DU, XX], [XX, DU, DU, XX], [RD, LU, RU, DL], [RU, RL, RL, LU]],
     2 : [[RD, RL, RL, DL], [RU, RL, DL, DU], [RD, RL, LU, DU], [DU, RD, RL, LU], [DU, RU, RL, DL], [RU, RL, RL, LU]],
