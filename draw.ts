@@ -4,7 +4,7 @@ window.onload = function () {
     canvas.height = window.innerHeight;
     let ctx : CanvasRenderingContext2D = canvas.getContext("2d");
 
-    let layout = new HorizontalLayout(0, 0, canvas.width, canvas.height);
+    let layout = new VerticalLayout(0, 0, canvas.width, canvas.height);
 
     setInterval(() => {
         layout.redraw(ctx);
@@ -221,6 +221,21 @@ class Layout {
         }
         ctx.stroke();
     }
+
+    set(values : number[]) {
+        let cur = 0;
+        for (let segment of this.segments) {
+            if (segment instanceof Digit) {
+                segment.setTarget(values[cur]);
+                cur += 1;
+            } else if (segment instanceof Separator) {
+                segment.set();
+            } else {
+                throw `Unexpected segment type`;
+            }
+        }
+
+    }
 }
 
 class HorizontalLayout extends Layout {
@@ -242,19 +257,22 @@ class HorizontalLayout extends Layout {
             new Digit(x + 5 * (digitW + gap) + 2 * (sepW + gap), y, digitW, digitH, gap, gap)
         )
     }
+}
 
-    set(values : number[]) {
-        let cur = 0;
-        for (let segment of this.segments) {
-            if (segment instanceof Digit) {
-                segment.setTarget(values[cur]);
-                cur += 1;
-            } else if (segment instanceof Separator) {
-                segment.set();
-            } else {
-                throw `Unexpected segment type`;
-            }
-        }
-
+class VerticalLayout extends Layout {
+    constructor(x : number, y : number, w : number, h : number) {
+        super(x, y, w, h);
+        let gap = 5;
+        let clockSize = Math.floor(Math.min((w - gap * 7) / 8, (h - gap * 17) / 18));
+        let digitW = 3 * (clockSize + gap) + clockSize;
+        let digitH = 5 * (clockSize + gap) + clockSize;
+        this.segments.push(
+            new Digit(x, y, digitW, digitH, gap, gap),
+            new Digit(x + digitW + gap, y, digitW, digitH, gap, gap),
+            new Digit(x, y + digitH + gap, digitW, digitH, gap, gap),
+            new Digit(x + digitW + gap, y + digitH + gap, digitW, digitH, gap, gap),
+            new Digit(x, y + 2 * (digitH + gap), digitW, digitH, gap, gap),
+            new Digit(x + digitW + gap, y + 2 * (digitH + gap), digitW, digitH, gap, gap)
+        )
     }
 }
