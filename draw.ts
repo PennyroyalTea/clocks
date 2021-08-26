@@ -8,7 +8,7 @@ window.onload = function () {
 
     setInterval(() => {
         layout.redraw(ctx);
-    }, 50);
+    }, 16);
 
     setInterval(() => {
         let now = new Date();
@@ -56,7 +56,7 @@ class Clock {
         this.lastUpdTs = curTs;
 
         if (this.hours === this.targetHours && this.minutes === this.targetMinutes) {
-            return;
+            return false;
         }
 
         let targetHours = (this.targetHours < this.hours ? this.targetHours + 2 * Math.PI : this.targetHours);
@@ -67,13 +67,27 @@ class Clock {
 
         this.hours = (nextHours > 2 * Math.PI ? nextHours - 2 * Math.PI : nextHours);
         this.minutes = (nextMinutes > 2 * Math.PI ? nextMinutes - 2 * Math.PI : nextMinutes);
+
+        return true;
     }
 
     draw(ctx : CanvasRenderingContext2D, x : number, y : number, r : number) {
-        this.moveArrows();
+        let changed = this.moveArrows();
+        if (!changed) {
+            return;
+        }
+        ctx.beginPath();
+        ctx.clearRect(x - r - 1, y - r - 1, 2 * (r + 1), 2 * (r + 1));
+
+        ctx.lineWidth = 1;
 
         ctx.moveTo(x + r, y);
         ctx.arc(x, y, r, 0, 2 * Math.PI);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.lineWidth = 2;
+
         ctx.moveTo(x, y);
         ctx.lineTo(
             x + Math.sin(this.hours) * r * this.HRS_ARROW_LEN,
@@ -82,6 +96,7 @@ class Clock {
         ctx.lineTo(
             x + Math.sin(this.minutes) * r * this.MINS_ARROW_LEN,
             y - Math.cos(this.minutes) * r * this.MINS_ARROW_LEN);
+        ctx.stroke();
     }
 }
 
@@ -213,13 +228,9 @@ class Layout {
     }
 
     redraw(ctx : CanvasRenderingContext2D) {
-        ctx.clearRect(this.x, this.y, this.w, this.h);
-        ctx.beginPath();
-        ctx.moveTo(this.x, this.y);
         for (let segment of this.segments) {
             segment.draw(ctx);
         }
-        ctx.stroke();
     }
 
     set(values : number[]) {
