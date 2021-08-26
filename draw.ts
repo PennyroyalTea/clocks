@@ -1,30 +1,13 @@
 window.onload = function () {
     let canvas : HTMLCanvasElement = document.getElementById("canvas") as HTMLCanvasElement;
-    canvas.width = 1600;
-    canvas.height = 720;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     let ctx : CanvasRenderingContext2D = canvas.getContext("2d");
 
-    let digit0 = new Digit(0, 0, 120, 180, 5, 5);
-    let digit1 = new Digit(125, 0, 120, 180, 5, 5);
-    let sep = new Separator(250, 0, 55, 180, 5, 5);
-    let digit2 = new Digit(310, 0, 120, 180, 5, 5);
-    let digit3 = new Digit(435, 0, 120, 180, 5, 5);
-    let sep1 = new Separator(560, 0, 55, 180, 5, 5);
-    let digit4 = new Digit(620, 0, 120, 180, 5, 5);
-    let digit5 = new Digit(745, 0, 120, 180, 5, 5);
+    let layout = new HorizontalLayout(0, 0, canvas.width, canvas.height);
 
     setInterval(() => {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.beginPath();
-        digit0.draw(ctx);
-        digit1.draw(ctx);
-        sep.draw(ctx);
-        digit2.draw(ctx);
-        digit3.draw(ctx);
-        sep1.draw(ctx);
-        digit4.draw(ctx);
-        digit5.draw(ctx);
-        ctx.stroke();
+        layout.redraw(ctx);
     }, 50);
 
     setInterval(() => {
@@ -32,15 +15,7 @@ window.onload = function () {
         let h = now.getHours();
         let m = now.getMinutes();
         let s = now.getSeconds();
-
-        digit0.setTarget(Math.floor(h / 10));
-        digit1.setTarget(Math.floor(h % 10));
-        sep.set();
-        digit2.setTarget(Math.floor(m / 10));
-        digit3.setTarget(Math.floor(m % 10));
-        sep1.set();
-        digit4.setTarget(Math.floor(s / 10));
-        digit5.setTarget(Math.floor(s % 10));
+        layout.set([Math.floor(h / 10), h % 10, Math.floor(m / 10), m % 10, Math.floor(s / 10), s % 10]);
     }, 1000);
 
 }
@@ -221,3 +196,65 @@ let positions = {
     9 : [[RD, RL, RL, DL], [DU, RD, DL, DU], [DU, RU, LU, DU], [RU, RL, DL, DU], [RD, RL, LU, DU], [RU, RL, RL, LU]]
 }
 
+class Layout {
+    x : number;
+    y : number;
+    w : number;
+    h : number;
+
+    segments : Segment[];
+
+    constructor(x : number, y : number, w : number, h : number) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.segments = [];
+    }
+
+    redraw(ctx : CanvasRenderingContext2D) {
+        ctx.clearRect(this.x, this.y, this.w, this.h);
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        for (let segment of this.segments) {
+            segment.draw(ctx);
+        }
+        ctx.stroke();
+    }
+}
+
+class HorizontalLayout extends Layout {
+    constructor(x : number, y : number, w : number, h : number) {
+        super(x, y, w, h);
+        let gap = 5;
+        let clockSize = Math.floor(Math.min((w - gap * 27) / 28, (h - gap * 5) / 6));
+        let digitW = 3 * (clockSize + gap) + clockSize;
+        let digitH = 5 * (clockSize + gap) + clockSize;
+        let sepW = 2 * clockSize + gap;
+        this.segments.push(
+            new Digit(x, y, digitW, digitH, gap, gap),
+            new Digit(x + digitW + gap, y, digitW, digitH, gap, gap),
+            new Separator(x + 2 * (digitW + gap), y, sepW, digitH, gap, gap),
+            new Digit(x + 2 * (digitW + gap) + sepW + gap, y, digitW, digitH, gap, gap),
+            new Digit(x + 3 * (digitW + gap) + sepW + gap, y, digitW, digitH, gap, gap),
+            new Separator(x + 4 * (digitW + gap) + sepW + gap, y, sepW, digitH, gap, gap),
+            new Digit(x + 4 * (digitW + gap) + 2 * (sepW + gap), y, digitW, digitH, gap, gap),
+            new Digit(x + 5 * (digitW + gap) + 2 * (sepW + gap), y, digitW, digitH, gap, gap)
+        )
+    }
+
+    set(values : number[]) {
+        let cur = 0;
+        for (let segment of this.segments) {
+            if (segment instanceof Digit) {
+                segment.setTarget(values[cur]);
+                cur += 1;
+            } else if (segment instanceof Separator) {
+                segment.set();
+            } else {
+                throw `Unexpected segment type`;
+            }
+        }
+
+    }
+}
