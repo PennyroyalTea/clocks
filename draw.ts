@@ -4,7 +4,14 @@ window.onload = function () {
     canvas.height = window.innerHeight;
     let ctx : CanvasRenderingContext2D = canvas.getContext("2d");
 
-    let layout = new VerticalLayout(0, 0, canvas.width, canvas.height);
+    let screenAspect = window.innerWidth / window.innerHeight;
+
+    let layout : Layout;
+    if ((28 / 6) / screenAspect < screenAspect / (8 / 18)) {
+        layout = new HorizontalLayout(0, 0, canvas.width, canvas.height);
+    } else {
+        layout = new VerticalLayout(0, 0, canvas.width, canvas.height);
+    }
 
     setInterval(() => {
         layout.redraw(ctx);
